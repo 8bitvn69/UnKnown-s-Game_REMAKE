@@ -4,16 +4,59 @@
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Components/SceneComponent.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Engine/CollisionProfile.h"
 
 
 // Sets default values
 ABall::ABall()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> TheBallMesh(TEXT("/Game/_MyWork/StaticMeshes/BallMesh.BallMesh"));
+
+	// Create mesh component for the ball
+	BallMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("Ball Mesh"));
+	BallMesh->SetStaticMesh(TheBallMesh.Object);
+	BallMesh->BodyInstance.SetCollisionProfileName(UCollisionProfile::PhysicsActor_ProfileName);
+	BallMesh->SetNotifyRigidBodyCollision(true);
+	BallMesh->SetSimulatePhysics(true);
+	BallMesh->SetLinearDamping(0.1f);
+	BallMesh->SetAngularDamping(0.1f);
+	RootComponent = BallMesh;
+
+	// Create a holder for the spring arm
+	HoldSpringArm = CreateDefaultSubobject<USceneComponent>(FName("Hold Spring Arm"));
+	HoldSpringArm->AttachToComponent(BallMesh, FAttachmentTransformRules::KeepRelativeTransform);
+
+	// Create a spring arm to hold a camera
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(FName("Spring Arm"));
+	SpringArm->SetRelativeRotation(FRotator(-20.f, 0.f, 0.f));
+	SpringArm->AttachToComponent(HoldSpringArm, FAttachmentTransformRules::KeepRelativeTransform);
+
+	// Create a camera
+	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
+	Camera->bUsePawnControlRotation = false;
+	Camera->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepRelativeTransform);
+
+	// Create a arrow
+	Arrow = CreateDefaultSubobject<UArrowComponent>(FName("Arrow"));
+	Arrow->ArrowColor = FColor::Green;
+	Arrow->ArrowSize = 1.f;
+	Arrow->ScreenSize = 0.0025f;
+	Arrow->AttachToComponent(HoldSpringArm, FAttachmentTransformRules::KeepRelativeTransform);
 
 	RollTorque = 10000000.f;
 	JumpImpulse = 100000.f;
+
+	MinAngle = -60.f;
+	MaxAngle = 0.f;
+	MouseYSpeed = 2.f;
+	MouseXSpeed = 2.f;
 
 	bHitGround = false;
 }
@@ -23,6 +66,8 @@ void ABall::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// Keep rotation of HoldSpringArm absolute when move the BallMesh
+	HoldSpringArm->SetAbsolute(false, true, true);
 }
 
 // Called every frame
@@ -40,6 +85,9 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("MoveForward", this, &ABall::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ABall::MoveRight);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ABall::Jump);
+	
+	PlayerInputComponent->BindAxis("Vertical", this, &ABall::Vertical);
+	PlayerInputComponent->BindAxis("Horizontal", this, &ABall::Horizontal);
 }
 
 // Called when actor hit something
@@ -78,10 +126,18 @@ void ABall::Jump() {
 	}
 }
 
-void ABall::GetBallMesh(UStaticMeshComponent* BallMesh) {
-	this->BallMesh = BallMesh;
+void ABall::Vertical(float Val) {
+	if (SpringArm != nullptr) {
+		float Angle = SpringArm->RelativeRotation.Pitch + MouseXSpeed * Val;
+		if (Angle > MinAngle && Angle < MaxAngle) {
+			SpringArm->SetRelativeRotation(FRotator(Angle, 0.f, 0.f));
+		}
+		
+	}
 }
 
-void ABall::GetArrow(UArrowComponent* Arrow) {
-	this->Arrow = Arrow;
+void ABall::Horizontal(float Val) {
+	if (HoldSpringArm != nullptr) {
+		HoldSpringArm->AddRelativeRotation(FRotator(0.f, MouseYSpeed * Val, 0.f));
+	}
 }

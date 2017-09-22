@@ -30,13 +30,9 @@ protected:
 	// Binded with Jump action input, push the Ball up
 	void Jump();
 
-	/* Get BallMesh and Arrow references from Blueprint */
-	// TODO remove later
-	UFUNCTION(BlueprintCallable, Category = "Setup")
-	void GetBallMesh(class UStaticMeshComponent* BallMesh);
+	void Vertical(float Val);
 
-	UFUNCTION(BlueprintCallable, Category = "Setup")
-	void GetArrow(class UArrowComponent* Arrow);
+	void Horizontal(float Val);
 
 public:	
 	// Called every frame
@@ -51,11 +47,35 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float JumpImpulse;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	float MinAngle; // Min angle that camera can reach
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	float MaxAngle; // Max angle that camera can reach
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	float MouseYSpeed; // Max speed when move camera with mouse Y
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	float MouseXSpeed; // Max speed when move camera with mouse X
+
 	// Contain references of components
-	UStaticMeshComponent* BallMesh = nullptr;
-	UArrowComponent* Arrow = nullptr;
+	UPROPERTY(VisibleAnywhere)
+	class UStaticMeshComponent* BallMesh = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	class UArrowComponent* Arrow = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	class USceneComponent* HoldSpringArm = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	class USpringArmComponent* SpringArm = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	class UCameraComponent* Camera = nullptr;
 
 private:
 	bool bHitGround; // Is the Ball on the ground?
-	
+
 };
