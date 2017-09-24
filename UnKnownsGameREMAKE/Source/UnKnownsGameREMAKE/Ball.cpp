@@ -51,7 +51,7 @@ ABall::ABall()
 	Arrow->AttachToComponent(HoldSpringArm, FAttachmentTransformRules::KeepRelativeTransform);
 
 	RollTorque = 10000000.f;
-	JumpImpulse = 100000.f;
+	JumpImpulse = 110000.f;
 
 	MinAngle = -60.f;
 	MaxAngle = 0.f;
@@ -92,7 +92,10 @@ void ABall::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 // Called when actor hit something
 void ABall::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) {
-	bHitGround = Other->ActorHasTag(FName("Ground"));
+	if (Other != nullptr)
+	{
+		bHitGround = Other->ActorHasTag(FName("Ground"));
+	}
 }
 
 void ABall::MoveForward(float Val) {
